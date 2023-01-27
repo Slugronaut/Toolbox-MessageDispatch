@@ -1,0 +1,23 @@
+{
+  "name": "com.postegames.messagedispatcher",
+  "version": "1.0.0",
+  "displayName": "PEGLIB - Message Dispatcher",
+  "description": "A generic message dispatching system for C#. It can be used in standalone apps or as part of a Unity project and it has specific extensions for Unity GameObject support.",
+  "unity": "2022.2",
+  "dependencies": {
+    "com.postegames.playerloopinjector": "",
+    "com.postegames.autocreatable": ""
+  },
+  "keywords": [
+    "message",
+    "dispatch",
+    "signal",
+    "event",
+    "handler"
+  ],
+  "author": {
+    "name": "Sluggy",
+    "email": "jcsluggy@gmail.com",
+    "url": "http:/postegames.com"
+  }
+}

@@ -1,0 +1,17 @@
+{
+    "name": "com.postegames.messagedispatcher",
+    "rootNamespace": "Toolbox",
+    "references": [
+        "GUID:13415da0b68dae24da63ed8e46d7345f",
+        "GUID:5d2de123429b952439048354a2e815c1"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
