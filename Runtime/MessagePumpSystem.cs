@@ -51,13 +51,19 @@ namespace Toolbox
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        public void AutoAwake()
+        {
+            _Instance = this;
+        }
 
         /// <summary>
         /// 
         /// </summary>
         public void OnSystemInit(IUpdateSystem system)
         {
-            _Instance = this;
             SceneManager.sceneLoaded += HandleSceneLoaded;
             Application.quitting += HandleAppQuit;
         }
