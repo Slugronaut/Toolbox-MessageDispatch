@@ -26,8 +26,8 @@ namespace Toolbox
     /// </remarks>
     /// 
     ///
-    [AutoCreate]
-    public partial class GlobalMessagePump : IPreUpdatable<SharedUpdateSystem>
+    [AutoCreate(resolvableTypes: typeof(IMessageDispatcher<GameObject>))]
+    public partial class GlobalMessagePump : IPreUpdatable<SharedUpdateSystem>, IMessageDispatcher<GameObject>
     {
         static GlobalMessagePump _Instance;
         public static GlobalMessagePump Instance => _Instance;
@@ -112,7 +112,6 @@ namespace Toolbox
         }
 
         #region Static Methods
-
         /// <summary>
         /// Adds a listener of an event type to this message pump.
         /// </summary>
@@ -167,6 +166,14 @@ namespace Toolbox
 #endif
 
             Dispatcher.RemoveListener(msgType, handler);
+        }
+
+        /// <summary>
+        /// Removes all listeners of all event types from this dispatcher.
+        /// </summary>
+        public void RemoveAllListeners()
+        {
+            Dispatcher.RemoveAllListeners();
         }
 
         /// <summary>

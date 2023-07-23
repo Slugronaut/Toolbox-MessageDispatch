@@ -125,6 +125,27 @@ namespace Toolbox
 	}
 
     /// <summary>
+    /// Interface exposed by all message dispatchers that work with <see cref="IMessage"/> and <see cref="MessageHandler"/>s.
+    /// </summary>
+	public interface IMessageDispatcher<O>
+    {
+        void AddListener<T>(MessageHandler<T> handler) where T : IMessage;
+        void AddListener(Type msgType, MessageHandler handler);
+        void RemoveListener<T>(MessageHandler<T> handler) where T : IMessage;
+        void RemoveListener(Type msgType, MessageHandler handler);
+        void RemoveAllListeners();
+        void PostMessage<T>(T message) where T : IMessage;
+        void PostMessage(Type msgType, IMessage message);
+
+        void RegisterLocalDispatch(O owner, IMessageDispatcher dispatcher);
+        void UnregisterLocalDispatch(O owner);
+        void ForwardDispatch<T>(O owner, T message) where T : IMessage;
+        void ForwardDispatch(O owner, Type msgType, IMessage message);
+        void ClearAllMessages();
+        void ClearMessagesOfType(Type msgType);
+    }
+
+    /// <summary>
     /// Interface exposed by specializeded message dispatchers that support removal of buffered messages.
     /// </summary>
     public interface IBufferedMessageDispatcher
