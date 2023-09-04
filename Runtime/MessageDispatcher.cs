@@ -18,7 +18,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine.Assertions;
 
-namespace Toolbox
+namespace Peg
 {
     /*
      * TYPES OF MESSAGES:

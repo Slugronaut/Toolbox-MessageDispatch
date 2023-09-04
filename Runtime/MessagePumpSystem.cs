@@ -1,10 +1,10 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using System;
-using Toolbox.UpdateSystem;
-using Toolbox.AutoCreate;
+using Peg.UpdateSystem;
+using Peg.AutoCreate;
 
-namespace Toolbox
+namespace Peg
 {
     /// <summary>
     /// Global singleton that acts as a centralized hub for transmitting messages.

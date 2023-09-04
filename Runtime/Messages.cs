@@ -1,7 +1,7 @@
 ﻿using System;
 using UnityEngine;
 
-namespace Toolbox
+namespace Peg
 {
     /// <summary>
     /// A simple message that can be posted by triggers when something touches them.
