@@ -1,7 +1,6 @@
 ﻿using System;
-using UnityEngine;
 
-namespace Peg
+namespace Peg.MessageDispatcher
 {
     /// <summary>
     /// A simple message that can be posted by triggers when something touches them.

@@ -11,14 +11,14 @@
  * 
  * NOTE: 1/15/2017 - Unity 5.5 has removed some GC issues with foreach loops. Might be able to revert back to standard Dictionary for deferred messages.
  */
- 
+
 //Currently broken in Unity
 //#define TOOLBOX_FASTDISPATCH
 using System;
 using System.Collections.Generic;
 using UnityEngine.Assertions;
 
-namespace Peg
+namespace Peg.MessageDispatcher
 {
     /*
      * TYPES OF MESSAGES:
@@ -47,13 +47,13 @@ namespace Peg
     /// public methods or properties, it is simply used to ensure proper 
     /// type-constraining within the MessageDispatcher classes.
     /// </summary>
-	public interface IMessage {}
+	public interface IMessage { }
 
     //Various semantics for messages. These types don't actually influence anything currently but instead imply the intended usage.
-    public interface IMessageEvent : IMessage {}
-    public interface IMessageCommand : IMessage {}
-    public interface IMessageRequest : IMessage {}
-    public interface IMessageResponse : IMessage {}
+    public interface IMessageEvent : IMessage { }
+    public interface IMessageCommand : IMessage { }
+    public interface IMessageRequest : IMessage { }
+    public interface IMessageResponse : IMessage { }
 
 
     /// <summary>
@@ -69,14 +69,14 @@ namespace Peg
     /// to a later point than when it was sent. Can be used by message dispatchers 
     /// to strategize how/when to process this type of message.
     /// </summary>
-    public interface IDeferredMessage : IMessage {}
+    public interface IDeferredMessage : IMessage { }
 
     /// <summary>
     /// Special-case subclass message that implies it should be kept on record internally
     /// and immediately dispatched to any new listeners that register for that type of message.
     /// Can be used by message dispatchers to strategize how/when to process this type of message.
     /// </summary>
-    public interface IBufferedMessage : IMessage {}
+    public interface IBufferedMessage : IMessage { }
 
     /// <summary>
     /// A special-case subclass message that implies it should post exactly
@@ -107,13 +107,13 @@ namespace Peg
     /// Interface exposed by all message dispatchers that work with <see cref="IMessage"/> and <see cref="MessageHandler"/>s.
     /// </summary>
 	public interface IMessageDispatcher
-	{
-		void AddListener<T>(MessageHandler<T> handler) where T : IMessage;
+    {
+        void AddListener<T>(MessageHandler<T> handler) where T : IMessage;
         void AddListener(Type msgType, MessageHandler handler);
         void RemoveListener<T>(MessageHandler<T> handler) where T : IMessage;
         void RemoveListener(Type msgType, MessageHandler handler);
         void RemoveAllListeners();
-		void PostMessage<T>(T message) where T : IMessage;
+        void PostMessage<T>(T message) where T : IMessage;
         void PostMessage(Type msgType, IMessage message);
 
         void RegisterLocalDispatch(object owner, IMessageDispatcher dispatcher);
@@ -122,7 +122,7 @@ namespace Peg
         void ForwardDispatch(object owner, Type msgType, IMessage message);
         void ClearAllMessages();
         void ClearMessagesOfType(Type msgType);
-	}
+    }
 
     /// <summary>
     /// Interface exposed by all message dispatchers that work with <see cref="IMessage"/> and <see cref="MessageHandler"/>s.
@@ -167,11 +167,11 @@ namespace Peg
         void ClearPendingMessages();
     }
 
-	/// <summary>
+    /// <summary>
     /// Instantaneously dispatches messages to all listeners of that type of message.
     /// </summary>
-	public class InstantMessageDispatcher : IMessageDispatcher
-	{
+    public class InstantMessageDispatcher : IMessageDispatcher
+    {
         /// <summary>
         /// Defines the initial size that should be used by most listener lists and dictionaries.
         /// </summary>
@@ -227,15 +227,15 @@ namespace Peg
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="handler"></param>
-		public virtual void AddListener<T> (MessageHandler<T> handler) where T : IMessage
-		{
+		public virtual void AddListener<T>(MessageHandler<T> handler) where T : IMessage
+        {
             Assert.IsNotNull(handler);
 
             Delegate del;
-			if(Listeners.TryGetValue(typeof(T), out del))
-				Listeners[typeof(T)] = Delegate.Combine(del, handler);
-			else Listeners[typeof(T)] = handler;
-		}
+            if (Listeners.TryGetValue(typeof(T), out del))
+                Listeners[typeof(T)] = Delegate.Combine(del, handler);
+            else Listeners[typeof(T)] = handler;
+        }
 
         /// <summary>
         /// Adds a handler for an event type to this dispatcher.
@@ -247,7 +247,7 @@ namespace Peg
 
             MessageHandler del;
             if (RuntimeListeners.TryGetValue(msgType, out del))
-                RuntimeListeners[msgType] = MessageHandler.Combine(del, handler) as MessageHandler;
+                RuntimeListeners[msgType] = Delegate.Combine(del, handler) as MessageHandler;
             else RuntimeListeners[msgType] = handler;
         }
 
@@ -256,8 +256,8 @@ namespace Peg
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="handler"></param>
-		public virtual void RemoveListener<T> (MessageHandler<T> handler) where T : IMessage
-		{
+		public virtual void RemoveListener<T>(MessageHandler<T> handler) where T : IMessage
+        {
             Assert.IsNotNull(handler);
 
 
@@ -269,7 +269,7 @@ namespace Peg
                 else Listeners[typeof(T)] = d;
             }
             else Listeners.Remove(typeof(T));
-		}
+        }
 
         /// <summary>
         /// Removes a handler for an event type from this dispatcher.
@@ -283,7 +283,7 @@ namespace Peg
             MessageHandler del;
             if (RuntimeListeners.TryGetValue(msgType, out del))
             {
-                var d = MessageHandler.Remove(del, handler);
+                var d = Delegate.Remove(del, handler);
                 if (d == null) RuntimeListeners.Remove(msgType);
                 else RuntimeListeners[msgType] = d as MessageHandler;
             }
@@ -294,7 +294,7 @@ namespace Peg
         /// Removes all message handlers for all types of events from this dispatcher.
         /// </summary>
 		public virtual void RemoveAllListeners()
-		{
+        {
             var types = new Type[Listeners.Keys.Count];
             Listeners.Keys.CopyTo(types, 0);
 
@@ -308,19 +308,19 @@ namespace Peg
                     else Listeners[types[i]] = newHandler;
                 }
             }
-		}
+        }
 
         /// <summary>
         /// Instantly dispatches the message to all handlers listening for that type of message.
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="message"></param>
-		public virtual void PostMessage<T> (T message) where T : IMessage
-		{
+		public virtual void PostMessage<T>(T message) where T : IMessage
+        {
             IsMessageNotNull(message);
             if (!IsDuplicateUniqueMessage(typeof(T)))
-                HandleMessage<T>(message);
-		}
+                HandleMessage(message);
+        }
 
         /// <summary>
         /// Instantly dispatches the message to all handlers listening for that type of message.
@@ -432,27 +432,27 @@ namespace Peg
 
             //non-generic, dynamically-typed listeners
             MessageHandler hand;
-            if(RuntimeListeners.TryGetValue(t, out hand))
+            if (RuntimeListeners.TryGetValue(t, out hand))
             {
                 var callback = hand as MessageHandler;
                 if (callback != null) callback(t, message);
             }
         }
 
-		/// <summary>
-		/// Internal helper method for handling posted messages.
-		/// </summary>
-		/// <typeparam name="T"></typeparam>
-		/// <param name="message"></param>
-		protected void HandleMessage(Type msgType, IMessage message)
-		{
+        /// <summary>
+        /// Internal helper method for handling posted messages.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="message"></param>
+        protected void HandleMessage(Type msgType, IMessage message)
+        {
             Assert.IsNotNull(msgType);
             IsMessageNotNull(message);
 
             //generic, statically-typed listeners
             Delegate del;
-			if (Listeners.TryGetValue(msgType, out del))
-			{
+            if (Listeners.TryGetValue(msgType, out del))
+            {
                 if (del == null)
                 {
                     //we missed cleanup somewhere
@@ -462,7 +462,7 @@ namespace Peg
                     Listeners.Remove(msgType);
                 }
                 else del.DynamicInvoke(message);
-			}
+            }
 
             //non-generic, dynamically-typed listeners
             MessageHandler hand;
@@ -471,8 +471,8 @@ namespace Peg
                 var callback = hand as MessageHandler;
                 if (callback != null) callback(msgType, message);
             }
-		}
-	}
+        }
+    }
 
 
     /// <summary>
@@ -480,7 +480,7 @@ namespace Peg
     /// It can also forward messages to local dispatchers on specific GameObjects.
 	/// </summary>
 	public class AllPurposeMessageDispatcher : InstantMessageDispatcher, IDeferredMessageDispatcher, IBufferedMessageDispatcher
-	{
+    {
         //readonly HashMap<Type, Queue<IMessage>> PendingMessages = new(PreAllocSize);
         readonly Dictionary<Type, Queue<IMessage>> PendingMessages = new(PreAllocSize);
         readonly Dictionary<Type, List<IMessage>> BufferedMessages = new(PreAllocSize);
@@ -491,28 +491,28 @@ namespace Peg
         readonly List<IMessage> BufferOnDelayMessages = new(PreAllocSize);
 
         public bool HasPendingMessages
-		{
-			get
-			{
-				foreach(var kvp in PendingMessages)
-				{
-					if (kvp.Value.Count > 0) return true;
-				}
-				return false;
-			}
-		}
+        {
+            get
+            {
+                foreach (var kvp in PendingMessages)
+                {
+                    if (kvp.Value.Count > 0) return true;
+                }
+                return false;
+            }
+        }
 
-		public bool HasBufferedMessages
-		{
-			get
-			{
-				foreach (var kvp in BufferedMessages)
-				{
-					if (kvp.Value.Count > 0) return true;
-				}
-				return false;
-			}
-		}
+        public bool HasBufferedMessages
+        {
+            get
+            {
+                foreach (var kvp in BufferedMessages)
+                {
+                    if (kvp.Value.Count > 0) return true;
+                }
+                return false;
+            }
+        }
 
         /// <summary>
         /// Removes a previously buffered or delayed-buffered message.
@@ -520,54 +520,54 @@ namespace Peg
         /// <typeparam name="T"></typeparam>
         /// <param name="msg"></param>
 		public void RemoveBufferedMessage<T>(T msg) where T : IBufferedMessage
-		{
+        {
             IsMessageNotNull(msg);
 
-			//if it was still pending, we don't need to look in the buffered messages
-			if(BufferOnDelayMessages.Remove(msg as IMessage)) return;
+            //if it was still pending, we don't need to look in the buffered messages
+            if (BufferOnDelayMessages.Remove(msg as IMessage)) return;
 
             //HUGE BUG!: After a scene switch, any messages that were previously buffered
             //by an object that has since been destroyed will remain in the system but
             //TryGetValue will return false. These messages are the reason we later see
             //null reference errors pop up in message handlers after switching scenes
             //or ending playmode.
-			List<IMessage> list;
-			if(BufferedMessages.TryGetValue(typeof(T), out list))
-			{
+            List<IMessage> list;
+            if (BufferedMessages.TryGetValue(typeof(T), out list))
+            {
                 list.Remove(msg as IMessage);
-				if(list.Count == 0)
-					BufferedMessages.Remove(typeof(T));
-				else BufferedMessages[typeof(T)] = list;
-			}
-		}
+                if (list.Count == 0)
+                    BufferedMessages.Remove(typeof(T));
+                else BufferedMessages[typeof(T)] = list;
+            }
+        }
 
-		/// <summary>
-		/// Removes all pending messages. Pending buffered messages are ignored.
-		/// </summary>
-		public void ClearPendingMessages()
-		{
-			PendingMessages.Clear();
-		}
+        /// <summary>
+        /// Removes all pending messages. Pending buffered messages are ignored.
+        /// </summary>
+        public void ClearPendingMessages()
+        {
+            PendingMessages.Clear();
+        }
 
-		/// <summary>
-		/// Removes all previously posted events from the buffer.
-		/// If they are delayed-buffered messages they will also be removed.
-		/// </summary>
-		public void ClearBufferedMessages()
-		{
-			BufferedMessages.Clear();
-			BufferOnDelayMessages.Clear();
-		}
+        /// <summary>
+        /// Removes all previously posted events from the buffer.
+        /// If they are delayed-buffered messages they will also be removed.
+        /// </summary>
+        public void ClearBufferedMessages()
+        {
+            BufferedMessages.Clear();
+            BufferOnDelayMessages.Clear();
+        }
 
-		/// <summary>
-		/// Removes all buffered messages that are still pending and
-		/// have yet to be buffered. Non-buffered pending messages
-		/// are ignored.
-		/// </summary>
-		public void ClearPendingBufferedMessages()
-		{
-			BufferOnDelayMessages.Clear();
-		}
+        /// <summary>
+        /// Removes all buffered messages that are still pending and
+        /// have yet to be buffered. Non-buffered pending messages
+        /// are ignored.
+        /// </summary>
+        public void ClearPendingBufferedMessages()
+        {
+            BufferOnDelayMessages.Clear();
+        }
 
         /// <summary>
         /// Removes any internally stored message states, unique, pending, and buffered messages.
@@ -591,24 +591,24 @@ namespace Peg
             PendingMessages.Remove(msgType);
         }
 
-		/// <summary>
-		/// Adds a handler for an event type and then sends all previously buffered messages
-		/// of that type to this handler.
-		/// </summary>
-		/// <typeparam name="T"></typeparam>
-		/// <param name="handler"></param>
-		public override void AddListener<T>(MessageHandler<T> handler)
-		{
-			//add listener as normal
-			base.AddListener<T>(handler);
+        /// <summary>
+        /// Adds a handler for an event type and then sends all previously buffered messages
+        /// of that type to this handler.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="handler"></param>
+        public override void AddListener<T>(MessageHandler<T> handler)
+        {
+            //add listener as normal
+            base.AddListener(handler);
 
-			//if this type of message has been invoked before, invoke for this listener now
-			List<IMessage> list;
-			if (BufferedMessages.TryGetValue(typeof(T), out list))
-			{
+            //if this type of message has been invoked before, invoke for this listener now
+            List<IMessage> list;
+            if (BufferedMessages.TryGetValue(typeof(T), out list))
+            {
                 T msg;
-				for (int i = 0; i < list.Count; i++)
-				{
+                for (int i = 0; i < list.Count; i++)
+                {
 #if TOOLBOX_FASTDISPATCH
                     handler((T)list[i]);
 #else
@@ -616,8 +616,8 @@ namespace Peg
                     if (msg != null) handler(msg);
 #endif
                 }
-			}
-		}
+            }
+        }
 
         /// <summary>
         /// Adds a handler for an event type and then sends all previously buffered messages
@@ -643,20 +643,20 @@ namespace Peg
                     msg = list[i];
                     if (msg != null) handler(msgType, msg);
 #endif
-                    
+
                 }
             }
         }
 
-		/// <summary>
-		/// Stores a message for later dispatchment.
-		/// </summary>
-		/// <typeparam name="T"></typeparam>
-		/// <param name="message"></param>
-		public virtual void PostDelayedMessage<T>(T message) where T : IDeferredMessage
-		{
+        /// <summary>
+        /// Stores a message for later dispatchment.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="message"></param>
+        public virtual void PostDelayedMessage<T>(T message) where T : IDeferredMessage
+        {
             PostDelayedMessage(typeof(T), message);
-		}
+        }
 
         /// <summary>
         /// Stores a message for later dispatchment.
@@ -667,7 +667,7 @@ namespace Peg
         {
             IsMessageNotNull(message);
 
-            if(IsDuplicateUniqueMessage(msgType)) return;
+            if (IsDuplicateUniqueMessage(msgType)) return;
 
             Queue<IMessage> list;
             if (PendingMessages.TryGetValue(msgType, out list))
@@ -680,26 +680,26 @@ namespace Peg
             }
         }
 
-		/// <summary>
-		/// Dispatches a message to all concerned listeners of that type and then
-		/// stores it in a buffer. Listeners that attach to this dispatcher at a later
-		/// time will receive all previously buffered messages.
-		/// </summary>
-		/// <param name="message">Message.</param>
-		/// <typeparam name="T">The 1st type parameter.</typeparam>
-		public virtual void PostBufferedMessage<T>(T message) where T : IBufferedMessage
-		{
+        /// <summary>
+        /// Dispatches a message to all concerned listeners of that type and then
+        /// stores it in a buffer. Listeners that attach to this dispatcher at a later
+        /// time will receive all previously buffered messages.
+        /// </summary>
+        /// <param name="message">Message.</param>
+        /// <typeparam name="T">The 1st type parameter.</typeparam>
+        public virtual void PostBufferedMessage<T>(T message) where T : IBufferedMessage
+        {
             if (IsDuplicateUniqueMessage(typeof(T))) return;
-            base.PostMessage<T>(message);
-			if (BufferedMessages.ContainsKey(typeof(T)))
-				BufferedMessages[typeof(T)].Add(message);
-			else
-			{
-				var list = new List<IMessage>(PreAllocSize);
-				list.Add(message);
-				BufferedMessages[typeof(T)] = list;
-			}
-		}
+            base.PostMessage(message);
+            if (BufferedMessages.ContainsKey(typeof(T)))
+                BufferedMessages[typeof(T)].Add(message);
+            else
+            {
+                var list = new List<IMessage>(PreAllocSize);
+                list.Add(message);
+                BufferedMessages[typeof(T)] = list;
+            }
+        }
 
         /// <summary>
         /// Dispatches a message to all concerned listeners of that type and then
@@ -722,19 +722,19 @@ namespace Peg
             }
         }
 
-		/// <summary>
-		/// Stores a message for later dispatchment. The message will also be flagged so that when it
-		/// finally is dispatched it will also be buffered. Listeners that attach to this dispatcher at a later
-		/// time will receive all previously buffered messages.
-		/// </summary>
-		/// <param name="message">Message.</param>
-		/// <typeparam name="T">The 1st type parameter.</typeparam>
-		public virtual void PostDelayedBufferedMessage<T>(T message) where T : IDeferredMessage
-		{
+        /// <summary>
+        /// Stores a message for later dispatchment. The message will also be flagged so that when it
+        /// finally is dispatched it will also be buffered. Listeners that attach to this dispatcher at a later
+        /// time will receive all previously buffered messages.
+        /// </summary>
+        /// <param name="message">Message.</param>
+        /// <typeparam name="T">The 1st type parameter.</typeparam>
+        public virtual void PostDelayedBufferedMessage<T>(T message) where T : IDeferredMessage
+        {
             if (IsDuplicateUniqueMessage(typeof(T))) return;
             BufferOnDelayMessages.Add(message);
-            PostDelayedMessage<T>(message);
-		}
+            PostDelayedMessage(message);
+        }
 
         /// <summary>
         /// Stores a message for later dispatchment. The message will also be flagged so that when it
@@ -756,7 +756,7 @@ namespace Peg
         /// flagged to be buffered but had not yet been processed will become buffered at this point.
         /// </summary>
         public virtual void ProcessAllPendingMessages()
-		{
+        {
             //NOTE: Switched to using a custom dictionary that exposes direct access to keys.
             //This was done to avoid using the enumerator in standard dictionary since Unity
             //produces garbage when iterating.
@@ -788,7 +788,7 @@ namespace Peg
                     //subscribe and then then message would be buffered.
                     //Switching the order (buffer *then* post) fixed it.
                     //TODO: a better way would probably be to invoke all listeners just after buffering?
-                        
+
 
                     //only buffer the message if it was supposed to be buffered but couldn't be
                     //when posted because it was also a delayed message
@@ -813,10 +813,10 @@ namespace Peg
             }
 
 
-			//remove all pending messages
-			PendingMessages.Clear();
+            //remove all pending messages
+            PendingMessages.Clear();
 
-		}
+        }
 
-	}
+    }
 }

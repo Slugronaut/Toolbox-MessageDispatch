@@ -4,7 +4,7 @@ using System;
 using Peg.UpdateSystem;
 using Peg.AutoCreate;
 
-namespace Peg
+namespace Peg.MessageDispatcher
 {
     /// <summary>
     /// Global singleton that acts as a centralized hub for transmitting messages.
@@ -44,9 +44,9 @@ namespace Peg
         {
             get
             {
-                #if UNITY_EDITOR
+#if UNITY_EDITOR
                 if (!Application.isPlaying || AppIsQuitting) return true;
-                #endif
+#endif
                 return _Instance == null || !_Instance.Enabled;
             }
         }
@@ -81,11 +81,11 @@ namespace Peg
         /// </summary>
         public void Update()
         {
-            #if UNITY_EDITOR
+#if UNITY_EDITOR
             if (Application.isPlaying && !AppIsQuitting) Dispatcher.ProcessAllPendingMessages();
-            #else
+#else
             Dispatcher.ProcessAllPendingMessages();
-            #endif
+#endif
         }
 
         /// <summary>
@@ -119,9 +119,9 @@ namespace Peg
         /// <param name="handler"></param>
         public void AddListener<T>(MessageHandler<T> handler) where T : IMessage
         {
-            #if UNITY_EDITOR
+#if UNITY_EDITOR
             if (!Application.isPlaying || AppIsQuitting) return;
-            #endif
+#endif
 
             Dispatcher.AddListener(handler);
         }
@@ -133,9 +133,9 @@ namespace Peg
         /// <param name="handler"></param>
         public void AddListener(Type msgType, MessageHandler handler)
         {
-            #if UNITY_EDITOR
+#if UNITY_EDITOR
             if (!Application.isPlaying || AppIsQuitting) return;
-            #endif
+#endif
 
             Dispatcher.AddListener(msgType, handler);
         }
@@ -342,6 +342,6 @@ namespace Peg
             Dispatcher.RemoveBufferedMessage(msg);
         }
         #endregion
-        
+
     }
 }
